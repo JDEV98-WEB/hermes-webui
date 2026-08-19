@@ -14,6 +14,7 @@ mode preservation, crash-safety, symlink write-through) so a refactor can't
 reintroduce the truncating plain write.
 """
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -47,7 +48,12 @@ def test_preserves_hardened_mode(tmp_path: Path) -> None:
 
     _atomic_write_settings_text(target, '{"password_hash": "y"}')
 
-    assert (os.stat(target).st_mode & 0o777) == 0o600
+    # 0600 owner-only mode is a POSIX contract. Windows does not model octal
+    # permission bits via os.chmod (a 0600 request reports as 0666), so the
+    # mode assertion is POSIX-only; the content/fsync coverage below runs
+    # everywhere.
+    if sys.platform != "win32":
+        assert (os.stat(target).st_mode & 0o777) == 0o600
 
 
 def test_failed_replace_leaves_original_intact(tmp_path: Path, monkeypatch) -> None:

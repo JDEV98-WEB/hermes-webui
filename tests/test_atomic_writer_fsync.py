@@ -15,6 +15,7 @@ per-thread temp name, and that content/permissions are unchanged.
 """
 import json
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -90,7 +91,10 @@ def test_passkeys_writer_fsyncs_and_keeps_0600(tmp_path, monkeypatch):
 
     assert calls, "passkeys write did not fsync"
     assert json.loads(path.read_text(encoding="utf-8")) == [{"id": "cred-1"}]
-    assert (os.stat(path).st_mode & 0o777) == 0o600  # owner-only preserved
+    # 0600 owner-only mode is a POSIX contract; Windows does not model octal
+    # permission bits, so the mode assertion is POSIX-only.
+    if sys.platform != "win32":
+        assert (os.stat(path).st_mode & 0o777) == 0o600  # owner-only preserved
 
 
 def test_oauth_writer_fsyncs_and_keeps_0600(tmp_path, monkeypatch):
@@ -102,4 +106,7 @@ def test_oauth_writer_fsyncs_and_keeps_0600(tmp_path, monkeypatch):
 
     assert calls, "oauth auth.json write did not fsync"
     assert json.loads(path.read_text(encoding="utf-8")) == {"access_token": "x"}
-    assert (os.stat(path).st_mode & 0o777) == 0o600  # owner-only preserved
+    # 0600 owner-only mode is a POSIX contract; Windows does not model octal
+    # permission bits, so the mode assertion is POSIX-only.
+    if sys.platform != "win32":
+        assert (os.stat(path).st_mode & 0o777) == 0o600  # owner-only preserved
