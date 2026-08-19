@@ -69,7 +69,12 @@ def test_resolve_chat_workspace_with_recovery_repairs_missing_implicit_workspace
 
     assert resolved == str(fallback.resolve())
     assert session.workspace == str(fallback.resolve())
-    assert str(fallback.resolve()) in sidecar.read_text(encoding="utf-8")
+    # The recovered workspace must be persisted to the session sidecar. Compare
+    # the JSON-parsed ``workspace`` field (resolution is stored JSON-escaped,
+    # e.g. backslashes are doubled on Windows) rather than a raw substring,
+    # which would be brittle across platforms.
+    _saved = json.loads(sidecar.read_text(encoding="utf-8"))
+    assert _saved["workspace"] == str(fallback.resolve())
 
 
 def test_chat_recovery_persistence_failure_fails_closed(monkeypatch, tmp_path):
@@ -222,7 +227,11 @@ def test_list_dir_recovers_missing_implicit_session_workspace(monkeypatch, tmp_p
 
     assert captured == {"workspace": fallback.resolve(), "rel_path": "."}
     assert session.workspace == str(fallback.resolve())
-    assert str(fallback.resolve()) in sidecar.read_text(encoding="utf-8")
+    # Recovered workspace persisted to the sidecar. Compare the JSON-parsed
+    # field (resolution is stored JSON-escaped, e.g. doubled backslashes on
+    # Windows) rather than a raw substring, which is brittle across platforms.
+    _saved = json.loads(sidecar.read_text(encoding="utf-8"))
+    assert _saved["workspace"] == str(fallback.resolve())
     assert payload == {
         "entries": [],
         "signature": "sig",
@@ -272,7 +281,11 @@ def test_list_recovery_stays_bound_when_global_fallback_changes(
     assert payload["workspace"] == str(fallback_a.resolve())
     assert session.workspace == str(fallback_a.resolve())
     assert captured["listed"] == fallback_a.resolve()
-    assert str(fallback_a.resolve()) in sidecar.read_text(encoding="utf-8")
+    # Recovered workspace persisted to the sidecar. Compare the JSON-parsed
+    # field (resolution is stored JSON-escaped, e.g. doubled backslashes on
+    # Windows) rather than a raw substring, which is brittle across platforms.
+    _saved = json.loads(sidecar.read_text(encoding="utf-8"))
+    assert _saved["workspace"] == str(fallback_a.resolve())
 
 
 def test_persisted_list_recovery_anchors_later_create_dir_to_fallback_a(

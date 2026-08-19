@@ -1,6 +1,8 @@
 """Sprint 3 tests: cron API, skills API, memory API, input validation."""
 import json, pathlib, shutil, tempfile, urllib.request, urllib.error
 
+import pytest
+
 from tests._pytest_port import BASE
 
 
@@ -23,7 +25,26 @@ def post(path, body=None):
 def make_outside_trusted_dir(prefix):
     home_root = pathlib.Path.home().resolve()
     temp_root = pathlib.Path(tempfile.gettempdir()).resolve()
-    base_root = temp_root if temp_root != home_root and home_root not in (temp_root, *temp_root.parents) else REPO_ROOT
+    # Pick a root that is genuinely OUTSIDE the user home, so the workspace
+    # trust check has something to reject. On POSIX the temp dir is typically
+    # /tmp (not under /home), so it works directly. On Windows the temp dir
+    # (e.g. C:\Users\jamie\AppData\Local\Temp) lives UNDER the home directory,
+    # so the heuristic must fall back to the repo root. If even that is under
+    # home (or no outside-home location can be constructed without writing to a
+    # restricted drive root), skip — the product deliberately always trusts
+    # Path.home() on every platform, so the "reject outside trusted root"
+    # invariant cannot be exercised here without an outside-home path.
+    if temp_root != home_root and home_root not in temp_root.parents:
+        base_root = temp_root
+    elif REPO_ROOT != home_root and home_root not in REPO_ROOT.parents:
+        base_root = REPO_ROOT
+    else:
+        pytest.skip(
+            "no workspace root available outside the user home on this platform; "
+            "resolve_trusted_workspace always trusts Path.home(), so the "
+            "outside-trusted-root rejection cannot be exercised here"
+        )
+        return  # unreachable, keeps type checkers happy
     outside_root = base_root / ".tmp-outside-trusted"
     outside_root.mkdir(exist_ok=True)
     return pathlib.Path(tempfile.mkdtemp(prefix=f"{prefix}-", dir=outside_root))

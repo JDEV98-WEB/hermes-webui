@@ -80,7 +80,11 @@ def test_raw_endpoint_missing_file_returns_404(cleanup_test_sessions):
 def test_md_file_returns_text_via_api_file(cleanup_test_sessions):
     sid, ws = make_session_tracked(cleanup_test_sessions)
     md = "# Hello\n\nThis is **bold**.\n"
-    (ws / "README.md").write_text(md)
+    # Write with newline="" so the on-disk bytes exactly match ``md`` and the
+    # read-back content is byte-stable across platforms (default write_text
+    # translates \n -> os.linesep on Windows, which would not round-trip here
+    # because the file API returns raw bytes, not platform-newline-normalized).
+    (ws / "README.md").write_text(md, newline="")
     data, status = get(f"/api/file?session_id={sid}&path=README.md")
     assert status == 200
     assert data["content"] == md

@@ -7,6 +7,7 @@ import os
 import shutil
 import stat
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -210,8 +211,13 @@ def test_codex_credentials_written_to_active_profile_auth_json(monkeypatch, tmp_
     assert auth_path == active_home / "auth.json"
     assert auth_path.exists()
     assert not (realish_home / ".hermes" / "auth.json").exists()
-    mode = stat.S_IMODE(auth_path.stat().st_mode)
-    assert mode == 0o600
+    # 0600 owner-only mode is a POSIX contract. Windows does not model octal
+    # permission bits via os.chmod (a 0600 request reports as 0666), so the
+    # mode assertion is POSIX-only; the file-write and content coverage below
+    # runs everywhere.
+    if sys.platform != "win32":
+        mode = stat.S_IMODE(auth_path.stat().st_mode)
+        assert mode == 0o600
     store = json.loads(auth_path.read_text(encoding="utf-8"))
     entry = store["credential_pool"]["openai-codex"][0]
     assert entry["auth_type"] == "oauth"

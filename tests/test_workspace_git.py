@@ -46,6 +46,11 @@ def _init_repo(path):
         _git(path, "checkout", "-B", "master")
     _git(path, "config", "user.email", "hermes-tests@example.invalid")
     _git(path, "config", "user.name", "Hermes Tests")
+    # Keep line-ending noise deterministic across platforms: disable autocrlf so
+    # a deliberate CRLF rewrite is not normalized back to LF by git on Windows,
+    # which would otherwise make CRLF-only noise undetectable in the test.
+    _git(path, "config", "core.autocrlf", "false")
+    _git(path, "config", "core.safecrlf", "false")
     return path
 
 
