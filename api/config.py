@@ -22,14 +22,12 @@ import socket
 import sys
 import threading
 import time
-import traceback
 import urllib.error
 import urllib.request
-import uuid
 import weakref
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import urlparse
 
 # ── Basic layout ──────────────────────────────────────────────────────────────
 import api.paths as _paths
