@@ -95,6 +95,48 @@ isolated Hermes home and follow
 > for a one-off root run, use `sudo -E docker compose up -d` and verify the
 > rendered mount with `docker compose config` first.
 
+## Render and other single-container PaaS
+
+The WebUI image is a **single process** that also needs the Hermes Agent runtime
+to actually run chats. The Dockerfile bakes the agent source into the image at
+`/opt/hermes` at build time (pinned via the `HERMES_AGENT_REF` build arg,
+default `v2026.8.16`), so a single Render/Docker/Podman container is fully
+functional with no separate agent volume or `hermes-agent` sibling container.
+
+This is the simplest production topology for a hosted deployment:
+
+```bash
+# Build arg override (optional) — pin a specific agent release
+docker build --build-arg HERMES_AGENT_REF=v2026.8.16 -t hermes-webui .
+docker run -p 8787:8787 -e HERMES_WEBUI_STATE_DIR=/data -v /data hermes-webui
+```
+
+`docker_init.bash` installs the baked agent's Python dependencies from
+`/opt/hermes` on first start, so the agent "just works" inside the one
+container. The multi-container `/home/hermeswebui/.hermes/hermes-agent` and
+`hermes-agent-src` volume paths are still honoured if you mount them — the
+baked `/opt/hermes` is only the fallback for single-container hosts.
+
+### Required environment variables
+
+| Variable | Recommended | Purpose |
+| --- | --- | --- |
+| `HERMES_WEBUI_STATE_DIR` | persistent volume | Sessions, config, and workspace state. **Must be on a persistent disk** — container restarts wipe the container filesystem. |
+| `HERMES_WEBUI_HOST` | `0.0.0.0` | Bind all interfaces (already the image default). |
+| `HERMES_WEBUI_PORT` | `8787` | Inbound port. |
+| `HERMES_WEBUI_PASSWORD` | strong secret | Enables password auth. **Without it the UI is open to the network** (the startup banner warns about this). |
+| `HERMES_WEBUI_TRUST_FORWARDED_PROTO` | `1` | **Required behind a TLS-terminating proxy** (Render, most PaaS). Makes the auth/session cookies carry the `Secure` flag so they are not sent over plain HTTP. Without it, cookies are never marked `Secure` and CSRF/cookie protection is weaker. See [`docs/troubleshooting.md`](troubleshooting.md). |
+| `HERMES_WEBUI_SECURE` | `1` (alt to above) | Force `Secure` cookies unconditionally regardless of proxy headers. |
+
+### Agent versioning
+
+The baked agent is pinned, not floating. Keep `HERMES_AGENT_REF` on a specific
+release tag (e.g. `v2026.8.16`) and upgrade it deliberately — do **not** switch
+to `main` or `latest` in production, because the WebUI and agent are tested
+against a matching release (see the README Compatibility section). Changing the
+pin requires a rebuild; the running container keeps its original baked agent
+until recreated.
+
 ## Optional GPU runtime image
 
 The default Hermes WebUI Docker image stays CPU-only. GPU user-space packages
