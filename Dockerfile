@@ -132,6 +132,24 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/b
 
 COPY --chown=root:root . /apptoo
 
+# ── Hermes Agent runtime (single-container / PaaS deploys) ───────────────────
+# The WebUI image only ships the browser UI. The Hermes Agent runtime
+# (run_agent / hermes_agent) is a separate repository normally delivered via a
+# sibling container or a bind-mounted volume at
+# /home/hermeswebui/.hermes/hermes-agent (see docker_init.bash). Platforms that
+# run a single container with no agent volume — e.g. Render — would otherwise
+# start degraded with no agent. Bake the agent source into the image at
+# /opt/hermes; docker_init.bash already installs its dependencies from this
+# path on first start, so a single-container deploy has a working agent.
+ARG HERMES_AGENT_REF=v2026.8.16
+RUN git clone --depth 1 "https://github.com/NousResearch/hermes-agent" /opt/hermes \
+    && if [ "${HERMES_AGENT_REF}" != "main" ]; then \
+         git -C /opt/hermes fetch --depth 1 origin "${HERMES_AGENT_REF}" \
+         && git -C /opt/hermes checkout "${HERMES_AGENT_REF}"; \
+       fi \
+    && chown -R hermeswebui:hermeswebui /opt/hermes \
+    && chmod -R a+rX,go-w /opt/hermes
+
 # Bake the git version tag into the image so the settings badge works even
 # when .git is not present (it is excluded by .dockerignore).
 # CI passes: --build-arg HERMES_VERSION=$(git describe --tags --always)
