@@ -142,11 +142,8 @@ COPY --chown=root:root . /apptoo
 # /opt/hermes; docker_init.bash already installs its dependencies from this
 # path on first start, so a single-container deploy has a working agent.
 ARG HERMES_AGENT_REF=v2026.8.16
-RUN git clone --depth 1 "https://github.com/NousResearch/hermes-agent" /opt/hermes \
-    && if [ "${HERMES_AGENT_REF}" != "main" ]; then \
-         git -C /opt/hermes fetch --depth 1 origin "${HERMES_AGENT_REF}" \
-         && git -C /opt/hermes checkout "${HERMES_AGENT_REF}"; \
-       fi \
+RUN git clone --depth 1 --branch "${HERMES_AGENT_REF}" \
+    "https://github.com/NousResearch/hermes-agent" /opt/hermes \
     && chown -R hermeswebui:hermeswebui /opt/hermes \
     && chmod -R a+rX,go-w /opt/hermes
 
