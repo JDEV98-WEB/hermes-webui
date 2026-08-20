@@ -220,6 +220,11 @@ def discover_agent_dir() -> Path | None:
         # Claude Code / Codex). HERMES_HOME stays at /root/.hermes, so the
         # `home / "hermes-agent"` candidate above does NOT cover this case.
         "/usr/local/lib/hermes-agent",
+        # Single-container / PaaS image builds (e.g. Render) bake the agent
+        # source into /opt/hermes at build time (see Dockerfile). With no
+        # agent volume mounted, the home/volume candidates above are absent,
+        # so this is the path that makes the bundled agent discoverable.
+        "/opt/hermes",
     ]
     for raw in candidates:
         if not raw:
