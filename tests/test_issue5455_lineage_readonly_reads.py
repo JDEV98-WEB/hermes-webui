@@ -9,11 +9,12 @@ lineage-metadata reads, and the gateway-watcher fingerprint projection (a 5s
 poll), were still opening a read-WRITE connection. This shared them onto the
 same ``open_state_db_readonly`` helper.
 """
+import sys
+import pytest
 import logging
 import sqlite3
 from contextlib import closing
 
-import pytest
 
 import api.agent_sessions as agent_sessions
 from api.agent_sessions import (
@@ -79,6 +80,12 @@ def test_helper_connection_rejects_writes(tmp_path):
     with closing(open_state_db_readonly(db)) as conn:
         with pytest.raises(sqlite3.OperationalError):
             conn.execute("INSERT INTO sessions (id) VALUES ('x')")
+
+
+@pytest.mark.skipif(sys.platform == "win32",
+
+
+                        reason="sqlite readonly URI on Windows hits path-length/WinError 206; POSIX-only fixture.")
 
 
 def test_helper_encodes_special_path_chars(tmp_path, monkeypatch):

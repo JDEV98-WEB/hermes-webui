@@ -105,6 +105,12 @@ def test_start_chat_stream_response_includes_provisional_title(tmp_path, monkeyp
         def start(self):
             return None
 
+        def join(self, timeout=None):
+            return None
+
+        def is_alive(self):
+            return False
+
     monkeypatch.setattr(routes.threading, "Thread", ImmediateThread)
 
     s = Session(session_id="test-start-response-title", title="Untitled")

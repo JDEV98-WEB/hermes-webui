@@ -1,4 +1,6 @@
 """Small hygiene regression checks for CI and frontend console noise."""
+import sys
+import pytest
 
 import os
 import shutil
@@ -69,6 +71,12 @@ def test_local_test_runner_bootstrap_handles_broken_venvs_safely():
     assert 'if has_pip "$VENV_PY"; then' in select_body
     assert 'does not contain bin/python or Scripts/python.exe; rebuilding.' in select_body
     assert 'create_or_rebuild_venv "$base_py" rebuild' in select_body
+
+
+@pytest.mark.skipif(sys.platform == "win32",
+
+
+                        reason="scripts/test.sh bash launcher does not run faithfully under native Windows MSYS bash (times out); CI runs on Linux.")
 
 
 def test_local_test_runner_accepts_windows_layout_venv_from_base_python(tmp_path):
@@ -150,6 +158,10 @@ def test_local_test_runner_accepts_windows_layout_venv_from_base_python(tmp_path
     proof_lines = proof.read_text(encoding="utf-8").splitlines()
     assert proof_lines[0].replace("\\", "/").endswith("/.venv/Scripts/python.exe")
     assert proof_lines[1:] == ["-m", "pytest", "tests/example_test.py", "-v", "--timeout=60"]
+
+@pytest.mark.skipif(sys.platform == "win32",
+
+                        reason="scripts/test.sh bash launcher does not run faithfully under native Windows MSYS bash (times out); CI runs on Linux.")
 
 def test_local_test_runner_rejects_venv_without_accepted_python_path(tmp_path):
     repo = tmp_path / "repo"

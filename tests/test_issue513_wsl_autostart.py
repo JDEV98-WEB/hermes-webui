@@ -1,4 +1,6 @@
 from __future__ import annotations
+import sys
+import pytest
 
 import re
 import shutil
@@ -51,6 +53,12 @@ def test_wsl_autostart_launcher_has_safe_duplicate_prevention_and_exports_runtim
 
     assert "/root" not in script
     assert "/home/michael" not in script
+
+
+@pytest.mark.skipif(sys.platform == "win32",
+
+
+                        reason="WSL/autostart launcher is Linux-only; `bash -n` on Windows path is mangled by MSYS. Source-level assertions still run.")
 
 
 def test_wsl_autostart_launcher_passes_bash_syntax_check():

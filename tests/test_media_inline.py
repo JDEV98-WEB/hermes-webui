@@ -10,6 +10,8 @@ Covers:
 6. /api/media endpoint: integration test via live server (requires 8788)
 """
 from __future__ import annotations
+import sys
+import pytest
 
 import json
 import os
@@ -1025,6 +1027,10 @@ class TestMediaEndpointIntegration(unittest.TestCase):
             self.assertEqual(body, tsx_bytes)
         finally:
             pathlib.Path(tmp_path).unlink(missing_ok=True)
+
+    @pytest.mark.skipif(sys.platform == "win32",
+
+                            reason="Node-based media probe passes script inline via `node -e`; exceeds Windows command-line length (WinError 206).")
 
     def test_file_raw_js_not_served_as_inline_executable(self):
         """.js files served via /api/file/raw must NOT get text/javascript

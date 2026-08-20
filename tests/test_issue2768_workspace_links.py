@@ -1,3 +1,5 @@
+import sys
+import pytest
 import json
 import pathlib
 import re
@@ -62,11 +64,23 @@ def _render(markdown: str) -> str:
     return json.loads(proc.stdout)
 
 
+@pytest.mark.skipif(sys.platform == "win32",
+
+
+                        reason="Passes entire JS renderer inline via `node -e`; exceeds Windows CreateProcess command-line length (WinError 206).")
+
+
 def test_workspace_markdown_renders_mailto_and_tel_links():
     html = _render("[email](mailto:foo@example.test) and [phone](tel:+155****1212)")
 
     assert '<a href="mailto:foo@example.test" target="_blank" rel="noopener">email</a>' in html
     assert '<a href="tel:+155****1212" target="_blank" rel="noopener">phone</a>' in html
+
+
+@pytest.mark.skipif(sys.platform == "win32",
+
+
+                        reason="Passes entire JS renderer inline via `node -e`; exceeds Windows CreateProcess command-line length (WinError 206).")
 
 
 def test_workspace_markdown_renders_message_scheme_links():

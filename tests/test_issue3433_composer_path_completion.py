@@ -1,4 +1,6 @@
 """Regression tests for #3433: chat composer path completion for ~/ tokens."""
+import sys
+import pytest
 
 import json
 import pathlib
@@ -6,7 +8,6 @@ import shutil
 import subprocess
 import textwrap
 
-import pytest
 
 
 REPO_ROOT = pathlib.Path(__file__).parent.parent
@@ -58,6 +59,8 @@ def _run_commands_js(script_body: str) -> dict:
 
 
 @pytest.mark.skipif(NODE is None, reason="node not on PATH")
+@pytest.mark.skipif(sys.platform == "win32",
+                        reason="Passes entire JS file inline via `node -e`; exceeds Windows CreateProcess command-line length (WinError 206).")
 def test_composer_path_token_matches_tilde_path_inside_message():
     result = _run_commands_js(
         """
@@ -75,6 +78,8 @@ def test_composer_path_token_matches_tilde_path_inside_message():
 
 
 @pytest.mark.skipif(NODE is None, reason="node not on PATH")
+@pytest.mark.skipif(sys.platform == "win32",
+                        reason="Passes entire JS file inline via `node -e`; exceeds Windows CreateProcess command-line length (WinError 206).")
 def test_composer_path_autocomplete_uses_workspace_suggest_endpoint():
     result = _run_commands_js(
         """

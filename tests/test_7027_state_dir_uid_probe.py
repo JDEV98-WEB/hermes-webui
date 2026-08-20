@@ -35,10 +35,25 @@ host-owned state mount — is covered by the ``state-dir-uid`` job in
 """
 import shutil
 import subprocess
+import sys
 import textwrap
 from pathlib import Path
 
 import pytest
+
+# `docker_init.bash` is a Linux/Docker-only entrypoint: it calls `chmod 600`,
+# `stat -c`, and `exec su`, and assumes a real POSIX filesystem. Under Windows
+# the test harness's MSYS `bash` cannot faithfully emulate those primitives (it
+# raises RPC-handle errors on `chmod`/`su`), so the behavioural harness cannot
+# validate real ownership there. The source-level invariant assertions below do
+# not shell out and still run on every platform; only the bash-executing
+# behaviour class is gated, mirroring the POSIX-only gating in test_5774b and
+# test_issue1362.
+requires_posix_bash = pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="docker_init.bash is a Linux/Docker-only entrypoint; its bash harness "
+    "cannot run faithfully under MSYS bash on Windows (#7027 behaviour class)",
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -133,6 +148,7 @@ def test_7027_fallback_default_preserved():
 # ── behavioural harness ───────────────────────────────────────────────────────
 
 @pytest.mark.skipif(shutil.which("bash") is None, reason="bash not available")
+@requires_posix_bash
 class TestIdResolutionBehaviour:
     """Run the real resolution block under bash against simulated mounts."""
 

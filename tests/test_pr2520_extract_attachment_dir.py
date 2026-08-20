@@ -5,6 +5,7 @@ inbox when HERMES_WEBUI_ATTACHMENT_DIR is set, matching the single-file
 upload path and ensuring session cleanup covers extracted archives.
 """
 import io
+import os
 import shutil
 import zipfile
 from pathlib import Path
@@ -90,5 +91,5 @@ class TestExtractArchiveAttachmentDir:
 
         assert len(result["files"]) == 1
         rel = result["files"][0]
-        assert rel == "docs/doc.md"
+        assert os.path.normpath(rel) == os.path.normpath("docs/doc.md")
         assert (session_dir / rel).exists()

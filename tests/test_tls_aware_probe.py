@@ -12,6 +12,8 @@ review of the original TLS-probe PR:
    polling HTTPS forever.
 """
 from __future__ import annotations
+import sys
+import pytest
 
 import http.server
 import importlib.util
@@ -22,7 +24,6 @@ import subprocess
 import threading
 from pathlib import Path
 
-import pytest
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -102,6 +103,10 @@ def _load_bootstrap():
 
 # ── shared shell helper ─────────────────────────────────────────────────────
 
+@pytest.mark.skipif(sys.platform == "win32",
+
+                        reason="Requires openssl + bash launcher (ctl.sh/health_probe.sh); POSIX-only under native Windows MSYS.")
+
 def test_helper_scheme_http_without_tls():
     out = subprocess.run(
         ["bash", "-c", f". {HEALTH_PROBE}; hermes_webui_probe_scheme"],
@@ -110,6 +115,12 @@ def test_helper_scheme_http_without_tls():
                                              "HERMES_WEBUI_TLS_KEY": ""},
     )
     assert out.stdout == "http"
+
+
+@pytest.mark.skipif(sys.platform == "win32",
+
+
+                        reason="Requires openssl + bash launcher (ctl.sh/health_probe.sh); POSIX-only under native Windows MSYS.")
 
 
 def test_helper_scheme_https_with_tls():
@@ -121,12 +132,24 @@ def test_helper_scheme_https_with_tls():
     assert out.stdout == "https"
 
 
+@pytest.mark.skipif(sys.platform == "win32",
+
+
+                        reason="Requires openssl + bash launcher (ctl.sh/health_probe.sh); POSIX-only under native Windows MSYS.")
+
+
 def test_helper_plain_http_probe():
     with _Server() as srv:
         res = _run_helper("127.0.0.1", srv.port,
                           {"HERMES_WEBUI_TLS_CERT": "", "HERMES_WEBUI_TLS_KEY": ""})
     assert res.returncode == 0
     assert '"status": "ok"' in res.stdout
+
+
+@pytest.mark.skipif(sys.platform == "win32",
+
+
+                        reason="Requires openssl + bash launcher (ctl.sh/health_probe.sh); POSIX-only under native Windows MSYS.")
 
 
 def test_helper_self_signed_warns_and_succeeds(self_signed_cert):
@@ -137,6 +160,12 @@ def test_helper_self_signed_warns_and_succeeds(self_signed_cert):
     assert res.returncode == 0, res.stderr
     assert '"status": "ok"' in res.stdout
     assert "self-signed" in res.stderr.lower()
+
+
+@pytest.mark.skipif(sys.platform == "win32",
+
+
+                        reason="Requires openssl + bash launcher (ctl.sh/health_probe.sh); POSIX-only under native Windows MSYS.")
 
 
 def test_helper_insecure_optin_is_silent(self_signed_cert):
@@ -153,6 +182,12 @@ def test_helper_insecure_optin_is_silent(self_signed_cert):
     assert res.stderr.strip() == ""
 
 
+@pytest.mark.skipif(sys.platform == "win32",
+
+
+                        reason="Requires openssl + bash launcher (ctl.sh/health_probe.sh); POSIX-only under native Windows MSYS.")
+
+
 def test_helper_https_falls_back_to_http_when_server_is_plain_http(self_signed_cert):
     """TLS configured in env, but the server serves plain HTTP (server.py's
     fallback-on-bad-cert contract). The probe must still succeed via HTTP."""
@@ -162,6 +197,12 @@ def test_helper_https_falls_back_to_http_when_server_is_plain_http(self_signed_c
                           {"HERMES_WEBUI_TLS_CERT": cert, "HERMES_WEBUI_TLS_KEY": key})
     assert res.returncode == 0, res.stderr
     assert '"status": "ok"' in res.stdout
+
+
+@pytest.mark.skipif(sys.platform == "win32",
+
+
+                        reason="Requires openssl + bash launcher (ctl.sh/health_probe.sh); POSIX-only under native Windows MSYS.")
 
 
 def test_helper_insecure_optin_falls_back_to_http(self_signed_cert):
@@ -257,6 +298,10 @@ def test_bootstrap_probe_rejects_bad_scheme(monkeypatch):
 
 
 # ── ctl.sh status regression: readonly .env vars ────────────────────────────
+
+@pytest.mark.skipif(sys.platform == "win32",
+
+                        reason="Requires openssl + bash launcher (ctl.sh/health_probe.sh); POSIX-only under native Windows MSYS.")
 
 def test_ctl_status_survives_readonly_env_vars(tmp_path: Path):
     """`.env` with UID=/GID= must not crash `ctl.sh status` (it sources .env)."""

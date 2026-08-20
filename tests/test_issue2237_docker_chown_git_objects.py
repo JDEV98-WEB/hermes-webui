@@ -1,4 +1,6 @@
 """Regression coverage for #2237 Docker startup chown on git object packs."""
+import sys
+import pytest
 
 from pathlib import Path
 import subprocess
@@ -49,6 +51,12 @@ def test_root_init_uses_git_object_safe_chown_helper():
 
     assert "chown_home_hermeswebui || error_exit" in root_section
     assert 'chown -R "${WANTED_UID}:${WANTED_GID}" /home/hermeswebui' not in root_section
+
+
+@pytest.mark.skipif(sys.platform == "win32",
+
+
+                        reason="Shells out `bash -n` on a Windows-path docker_init.bash; MSYS mangles backslash paths. Source-level assertions in this file still run.")
 
 
 def test_docker_init_bash_syntax_still_valid():

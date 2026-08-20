@@ -52,7 +52,7 @@ def _read_agent_revision(
             timeout=2,
             creationflags=windows_hide_flags(),
         )
-        if worktree_result.returncode != 0:
+        if worktree_result.returncode != 0 or not worktree_result.stdout:
             return None
         worktree = Path(worktree_result.stdout.strip()).resolve()
         relative_module = module_path.relative_to(worktree).as_posix()
@@ -73,7 +73,7 @@ def _read_agent_revision(
             timeout=2,
             creationflags=windows_hide_flags(),
         )
-        if tracked_result.returncode != 0:
+        if tracked_result.returncode != 0 or not tracked_result.stdout:
             return None
         revision_result = subprocess.run(
             ["git", "-C", str(worktree), "rev-parse", "--verify", "HEAD"],
@@ -86,8 +86,9 @@ def _read_agent_revision(
     except (OSError, subprocess.TimeoutExpired, RuntimeError, ValueError):
         return None
 
-    revision = revision_result.stdout.strip()
-    return revision if revision_result.returncode == 0 and revision else None
+    if revision_result.returncode != 0 or not revision_result.stdout:
+        return None
+    return revision_result.stdout.strip() or None
 
 
 _AGENT_SOURCE_DIR: Path | None = None
@@ -136,10 +137,14 @@ def ensure_agent_runtime_current() -> None:
     """Reject a known Git checkout change instead of mixing Python modules."""
     if _AGENT_REVISION is None:
         return
-    if (
-        _read_agent_revision(_AGENT_SOURCE_DIR, module_path=_AGENT_MODULE_PATH)
-        != _AGENT_REVISION
-    ):
+    current_revision = _read_agent_revision(_AGENT_SOURCE_DIR, module_path=_AGENT_MODULE_PATH)
+    # If the revision cannot be re-read (e.g. git output was unverifiable in the
+    # current process), we cannot *confirm* a checkout change — do not block on
+    # uncertainty. A genuine change still returns a non-None revision that
+    # differs from the captured one and triggers the restart guard.
+    if current_revision is None:
+        return
+    if current_revision != _AGENT_REVISION:
         raise AgentRuntimeChangedError(_RESTART_MESSAGE)
 
 

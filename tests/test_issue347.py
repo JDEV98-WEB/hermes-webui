@@ -10,6 +10,8 @@ Structural tests — no server required. Verify:
 - SAFE_TAGS updated to allow <span> (for inline math)
 - renderKatexBlocks() is wired into the requestAnimationFrame call
 """
+import sys
+import pytest
 import json
 import pathlib
 import re
@@ -99,6 +101,12 @@ def test_katex_block_placeholder_emitted():
         '.katex-block placeholder div not emitted by renderMd restore pass'
 
 
+@pytest.mark.skipif(sys.platform == "win32",
+
+
+                        reason="Passes entire katex/markdown JS inline via `node -e`; exceeds Windows CreateProcess command-line length (WinError 206).")
+
+
 def test_backslash_latex_delimiters_render_to_katex_placeholders():
     """Common LLM LaTeX delimiters \\[...\\] and \\(...\\) render in assistant and user bubbles."""
     sample = """\\[
@@ -113,6 +121,12 @@ where \\(L_i(f)\\) = SPL at angle \\(i\\)."""
         assert 'class="katex-inline" data-katex="inline"' in html, html
         assert "\\[" not in html and "\\]" not in html, html
         assert "\\(" not in html and "\\)" not in html, html
+
+
+@pytest.mark.skipif(sys.platform == "win32",
+
+
+                        reason="Passes entire katex/markdown JS inline via `node -e`; exceeds Windows CreateProcess command-line length (WinError 206).")
 
 
 def test_user_code_block_with_latex_syntax_renders_as_literal_code():
@@ -135,6 +149,12 @@ def test_user_code_block_with_latex_syntax_renders_as_literal_code():
     assert "\\[ a + b \\]" in user_html, user_html
     assert "\\(L_i\\)" in user_html, user_html
     assert "$$matrix$$" in user_html, user_html
+
+
+@pytest.mark.skipif(sys.platform == "win32",
+
+
+                        reason="Passes entire katex/markdown JS inline via `node -e`; exceeds Windows CreateProcess command-line length (WinError 206).")
 
 
 def test_user_bubble_top_level_latex_still_renders_after_fence_reorder():

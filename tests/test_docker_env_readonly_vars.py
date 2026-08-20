@@ -25,13 +25,14 @@ These tests pin:
   - The optional ``export`` prefix on those names is also caught
   - Non-readonly KEY=value lines in .env still load
 """
+import sys
+import pytest
 import re
 import shutil
 import subprocess
 import textwrap
 from pathlib import Path
 
-import pytest
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -88,6 +89,8 @@ class TestStartShReadonlyEnvFilter:
 
 
 @pytest.mark.skipif(shutil.which("bash") is None, reason="bash not available")
+@pytest.mark.skipif(sys.platform == "win32",
+                        reason="Behavioral start.sh tests use POSIX /tmp templates and bash; unrunnable under native Windows MSYS.")
 class TestStartShReadonlyEnvFilterBehavioral:
     """Behavioral tests — actually run bash to verify .env parsing succeeds.
 

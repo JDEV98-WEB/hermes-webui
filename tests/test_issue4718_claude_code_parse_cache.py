@@ -7,6 +7,8 @@ instead of re-parsing, while any genuine edit transparently invalidates just
 the changed file. These tests pin that behavior.
 """
 from __future__ import annotations
+import sys
+import pytest
 
 import json
 import time
@@ -203,6 +205,12 @@ def test_parse_cache_dicts_are_read_only_contract(tmp_path):
     # ...but the dict objects are shared (the read-only contract). If a future
     # change deep-copies on read, update this assertion deliberately.
     assert first_msgs[0] is second_msgs[0]
+
+
+@pytest.mark.skipif(sys.platform == "win32",
+
+
+                        reason="Windows FS shares mtime/ctime resolution (st_ctime_ns equals st_mtime_ns); cache-invalidation on ctime is POSIX-only.")
 
 
 def test_parse_cache_invalidates_on_same_size_mtime_ctime_edit(tmp_path, monkeypatch):

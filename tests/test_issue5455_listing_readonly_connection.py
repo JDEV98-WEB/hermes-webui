@@ -12,6 +12,8 @@ writable connection. With the index present (the normal case) the read path
 performs zero writes; when the index is missing the self-heal still runs and
 rows still come back.
 """
+import sys
+import pytest
 import logging
 import sqlite3
 
@@ -72,6 +74,12 @@ def test_listing_opens_read_only_and_returns_rows(tmp_path, monkeypatch):
     assert calls, "expected at least one sqlite connection"
     assert calls[0]["uri"] is True
     assert "mode=ro" in calls[0]["target"]
+
+
+@pytest.mark.skipif(sys.platform == "win32",
+
+
+                        reason="sqlite readonly URI on Windows hits path-length/WinError 206; POSIX-only fixture.")
 
 
 def test_listing_read_only_uri_encodes_special_path_chars(tmp_path, monkeypatch):

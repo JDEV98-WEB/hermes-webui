@@ -1010,6 +1010,12 @@ def test_issue1734_chat_start_persists_repaired_codex_provider(monkeypatch):
         def start(self):
             captured_thread["started"] = True
 
+        def join(self, timeout=None):
+            return None
+
+        def is_alive(self):
+            return False
+
     class FakeHandler:
         def __init__(self):
             self.wfile = io.BytesIO()

@@ -708,6 +708,12 @@ def test_chat_start_retags_empty_session_to_request_profile(monkeypatch, tmp_pat
         def start(self):
             pass
 
+        def join(self, timeout=None):
+            return None
+
+        def is_alive(self):
+            return False
+
     monkeypatch.setattr(routes.threading, "Thread", FakeThread)
 
     payloads = []
@@ -777,6 +783,12 @@ def test_chat_start_does_not_retag_non_empty_session(monkeypatch, tmp_path):
 
         def start(self):
             pass
+
+        def join(self, timeout=None):
+            return None
+
+        def is_alive(self):
+            return False
 
     monkeypatch.setattr(routes.threading, "Thread", FakeThread)
     monkeypatch.setattr(routes, "j", lambda handler, payload, status=200, **kwargs: payload)

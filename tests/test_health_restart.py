@@ -1,6 +1,7 @@
 """Health route and shared gateway restart helper checks."""
 
 import io
+import os
 import subprocess
 import threading
 import types
@@ -97,7 +98,7 @@ def test_restart_active_profile_gateway_success_uses_active_profile_home(monkeyp
     assert result["status"] == "completed"
     assert result["message"] == "Gateway service restarted successfully"
     assert called["args"] == ["/mock/bin/hermes", "--profile", "default", "gateway", "restart"]
-    assert called["env"]["HERMES_HOME"] == "/mock/hermes/home"
+    assert os.path.normpath(called["env"]["HERMES_HOME"]) == os.path.normpath("/mock/hermes/home")
     assert gateway_restart._GATEWAY_RESTART_LOCK.locked() is False
 
 
@@ -122,7 +123,7 @@ def test_restart_active_profile_gateway_pins_explicit_default_profile(monkeypatc
 
     assert result["status"] == "completed"
     assert called["args"] == ["/mock/bin/hermes", "--profile", "default", "gateway", "restart"]
-    assert called["env"]["HERMES_HOME"] == "/mock/hermes/default"
+    assert os.path.normpath(called["env"]["HERMES_HOME"]) == os.path.normpath("/mock/hermes/default")
 
 
 def test_restart_active_profile_gateway_omits_profile_for_isolated_default_home(monkeypatch):
@@ -146,7 +147,7 @@ def test_restart_active_profile_gateway_omits_profile_for_isolated_default_home(
 
     assert result["status"] == "completed"
     assert called["args"] == ["/mock/bin/hermes", "gateway", "restart"]
-    assert called["env"]["HERMES_HOME"] == "/mock/hermes/profiles/default"
+    assert os.path.normpath(called["env"]["HERMES_HOME"]) == os.path.normpath("/mock/hermes/profiles/default")
 
 
 def test_restart_active_profile_gateway_rejects_malformed_explicit_profile(monkeypatch):
@@ -191,7 +192,7 @@ def test_restart_active_profile_gateway_accepts_renamed_root_alias(monkeypatch):
 
     assert result["status"] == "completed"
     assert called["args"] == ["/mock/bin/hermes", "--profile", "default", "gateway", "restart"]
-    assert called["env"]["HERMES_HOME"] == "/mock/hermes/root"
+    assert os.path.normpath(called["env"]["HERMES_HOME"]) == os.path.normpath("/mock/hermes/root")
 
 
 def test_restart_active_profile_gateway_failure_preserves_empty_output_contract(monkeypatch):

@@ -11,6 +11,8 @@ Two problems fixed:
    bind-mount dirs created by Docker as root are unwritable by hermeswebui.
    Fix: root init mkdir/chown, then runtime verifies access without sudo.
 """
+import sys
+import pytest
 import pathlib
 import re
 
@@ -192,6 +194,10 @@ class TestWorkspacePermissions:
         assert "read-only workspace is supported" in INIT_SCRIPT, (
             "docker_init.bash must print a clear message when workspace is read-only (#670)"
         )
+
+    @pytest.mark.skipif(sys.platform == "win32",
+
+                            reason="Shells out `bash -n` on a Windows-path script; MSYS mangles backslash paths. Source-level assertions in this file still run.")
 
     def test_init_script_syntax_valid(self):
         """docker_init.bash must pass bash -n syntax check."""
